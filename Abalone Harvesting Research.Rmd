@@ -1,0 +1,119 @@
+---
+title: "Abalone Harvesting"
+author: "LJO Minnesota"
+date: "March 5, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+For Abalone Harvest Research Project
+Larry Glerum
+
+install.packages("rockchalk")
+
+library(rockchalk)
+
+#read data into R
+mydata <- read.csv("mydata"")
+#check data
+summary(mydata)
+str(mydata)
+
+
+
+
+
+
+
+#create new variable type with rockchalk
+mydata$TYPE <- combineLevels(mydata$SEX, levs = c("M","F"), "ADULT")
+
+#For histograms of adults and Infants
+infvol<-mydata[mydata$TYPE == "I", "VOLUME"]
+adtvol<-mydata[mydata$TYPE == "Adult", "VOLUME"]
+hist(infvol)
+hist(adtvol)
+
+#For boxplots
+boxplot(linear_model$residuals,mydata$TYPE, col = c("red"), main = "boxplots of linear regression by maturity")
+boxplot(linear_model$residuals,mydata$CLASS, col = c("blue"), main = "boxplots of linear regression by class")
+
+#For study on adults and infants.
+for (k in 1:1000) {
+value <- min.v + k*delta
+volume.value[k] <- value
+prop.infants[k] <- sum(mydata$VOLUME[idxi] <= value)/total.infants
+prop.adults[k] <- sum(mydata$VOLUME[idxa] <= value)/total.adults
+}
+
+n.infants<- sum(prop.infants <= 0.5)
+split.infants <- min.v + (n.infants + 0.5)*delta
+n.adults<- sum(prop.adults <= 0.5)
+split.adults <- min.v + (n.adults + 0.5)*delta
+
+head(prop.adults,20)
+
+head(prop.infants,20)
+ 
+head(volume.value,20)
+
+
+y.loess.a <- loess(1-prop.adults ~ volume.value, span = 0.25, family = c("symmetric"))
+y.loess.i <- loess(1-prop.infants ~ volume.value, span = 0.25, family = c("symmetric"))
+
+#For Difference graph
+plot(volume.value,difference, col = "red")
+lines(smooth.difference, lwd = 2)
+abline(v = 280, lty = 2, col = "yellow", lwd = 3)
+text(x = 310, y = .38, labels = "volume = 280", srt = 270)
+
+
+which.max(smooth.difference)
+# 280
+abline(v = 280, col = "red", lwd = 2)
+text(x = 305, y = .3, labels = "proposed cut-off 280", srt = 270)
+plot(volume.value,difference, main = "difference in harvest %")
+lines(smooth.difference, col = "red")
+abline(v = 147.96, col = "blue", lwd = 2)
+text(x = 180, y = .2, labels = "infant = 148", srt = 270)
+abline(v = 389.03, col = "blue", lwd = 2)
+text(x = 420, y = .2, labels = "adult = 389", srt = 270)
+abline(v = 280, col = "red", lwd = 2)
+text(x = 305, y = .3, labels = "proposed cut-off 280", srt = 270)
+
+#Code for q 8
+sum(mydata[mydata$TYPE == "Adult", "VOLUME"] > 280)/ sum(mydata$TYPE == "Adult") #0.718529
+sum(mydata[mydata$TYPE == "I", "VOLUME"] > 280)/ sum(mydata$TYPE == "I") #0.206686
+
+(1-prop.infants)[which.max(smooth.difference)] #0.2036474
+
+volume.value[volume.value > max(mydata[mydata$CLASS == "A1" & mydata$TYPE == "I", "VOLUME"])][1] #206.9844
+sum(mydata[mydata$TYPE == "I", "VOLUME"] > 206.9844) / sum(mydata$TYPE == "I") #0.3404255
+
+sum(mydata[mydata$TYPE == "Adult", "VOLUME"] > 206.9844)/ sum(mydata$TYPE == "Adult") #0.8316832
+sum(mydata[mydata$TYPE == "I", "VOLUME"] < 206.9844)/ sum(mydata$TYPE == "I") #0.6595745
+sum(mydata[mydata$TYPE == "I", "VOLUME"] < 253.6113)/ sum(mydata$TYPE == "I") #0.7568389
+sum(mydata[mydata$TYPE == "Adult", "VOLUME"] < 253.6113)/ sum(mydata$TYPE == "Adult") #0.2432815
+
+volume.value[which.min(abs(prop.adults - (1- prop.infants)))] #253.6113
+
+#ROC curve
+plot((1-prop.infants),(1-prop.adults), ylab = "True Positive Rate (Sensitivity)", col = "blue", xlab = "False Positive Rate(1 - Specificity)", main = "ROC curve for adult and infant Abalone")
+abline(0,1, lty = 2, lwd = 3)
+points(.21,.72, col = "red",lwd = 4)
+points(.24,.76, col = "red",lwd = 4)
+points(.34,.83, col = "red",lwd = 4)
+text(.55,.8,labels = "zero harvest,A1")
+text(.6,.75,labels = "= 207")
+text(.2,.84,labels = "= 253.6")
+text(.12,.9,labels = "equal harvest")
+text(.4,.64,labels = "max difference= 280")
+
+# Auc calculation
+
+auc(1-prop.infants,1-prop.adults) #0.8332244
